@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Task Prioritizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <h1>📚 Student Task Prioritizer</h1>
+        <p class="subtitle">Add your deadlines and let us tell you what to work on first</p>
+    </header>
+
+    <!-- Add Task Form -->
+    <section class="card form-card">
+        <h2>➕ Add New Task</h2>
+        <form id="taskForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" placeholder="e.g. Data Structures" required>
+                </div>
+                <div class="form-group">
+                    <label for="title">Task Title</label>
+                    <input type="text" id="title" placeholder="e.g. Unit Test 2" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="taskType">Task Type</label>
+                    <select id="taskType" required>
+                        <option value="">Select type…</option>
+                        <option value="EXAM">📝 Exam</option>
+                        <option value="ASSIGNMENT">📄 Assignment</option>
+                        <option value="PROJECT">🛠️ Project</option>
+                        <option value="PLACEMENT_TEST">🎯 Placement Test</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate">Due Date</label>
+                    <input type="date" id="dueDate" required>
+                </div>
+            </div>
+            <div class="form-group full-width">
+                <label for="description">Description (optional)</label>
+                <textarea id="description" rows="2" placeholder="Any notes about this task…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Task</button>
+        </form>
+    </section>
+
+    <!-- Priority Dashboard -->
+    <section class="card">
+        <div class="section-header">
+            <h2>🎯 Priority Dashboard</h2>
+            <div class="filter-group">
+                <button class="btn btn-sm active" data-filter="all">All</button>
+                <button class="btn btn-sm" data-filter="EXAM">Exams</button>
+                <button class="btn btn-sm" data-filter="ASSIGNMENT">Assignments</button>
+                <button class="btn btn-sm" data-filter="PROJECT">Projects</button>
+                <button class="btn btn-sm" data-filter="PLACEMENT_TEST">Placement</button>
+            </div>
+        </div>
+        <div id="taskList" class="task-list">
+            <p class="empty-state">Loading tasks…</p>
+        </div>
+    </section>
+
+    <!-- Completed Tasks -->
+    <section class="card">
+        <h2>✅ Completed Tasks</h2>
+        <div id="completedList" class="task-list">
+            <p class="empty-state">No completed tasks yet.</p>
+        </div>
+    </section>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal hidden">
+    <div class="modal-content card">
+        <h2>✏️ Edit Task</h2>
+        <form id="editForm">
+            <input type="hidden" id="editId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editSubject">Subject</label>
+                    <input type="text" id="editSubject" required>
+                </div>
+                <div class="form-group">
+                    <label for="editTitle">Task Title</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editTaskType">Task Type</label>
+                    <select id="editTaskType" required>
+                        <option value="EXAM">📝 Exam</option>
+                        <option value="ASSIGNMENT">📄 Assignment</option>
+                        <option value="PROJECT">🛠️ Project</option>
+                        <option value="PLACEMENT_TEST">🎯 Placement Test</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editDueDate">Due Date</label>
+                    <input type="date" id="editDueDate" required>
+                </div>
+            </div>
+            <div class="form-group full-width">
+                <label for="editDescription">Description</label>
+                <textarea id="editDescription" rows="2"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
