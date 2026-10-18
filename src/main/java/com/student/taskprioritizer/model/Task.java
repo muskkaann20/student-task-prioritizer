@@ -30,6 +30,8 @@ public class Task {
     private LocalDate dueDate;
 
     private String description;
+    @Column(name = "owner_id")
+    private String ownerId;
 
     @Column(nullable = false)
     private boolean completed = false;
@@ -68,4 +70,11 @@ public class Task {
 
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
+    public String getOwnerId() {
+    return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+    this.ownerId = ownerId;
+}
 }
