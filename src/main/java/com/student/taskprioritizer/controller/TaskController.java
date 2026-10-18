@@ -1,3 +1,4 @@
+
 package com.student.taskprioritizer.controller;
 
 import com.student.taskprioritizer.model.Task;
@@ -19,56 +20,75 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    /** Create a new task. */
+    private String getOwnerId(String ownerId) {
+        if (ownerId == null || !ownerId.matches("[a-zA-Z0-9-]{16,100}")) {
+            throw new IllegalArgumentException("Invalid owner ID");
+        }
+        return ownerId;
+    }
+
     @PostMapping
-    public ResponseEntity<Task> create(@RequestBody Task task) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(task));
+    public ResponseEntity<Task> create(
+            @RequestHeader("X-Owner-Id") String ownerId,
+            @RequestBody Task task) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(taskService.createTask(task, getOwnerId(ownerId)));
     }
 
-    /** Get all tasks (unordered). */
     @GetMapping
-    public List<Task> getAll() {
-        return taskService.getAllTasks();
+    public List<Task> getAll(@RequestHeader("X-Owner-Id") String ownerId) {
+        return taskService.getAllTasks(getOwnerId(ownerId));
     }
 
-    /** Get tasks sorted by priority (highest first). */
     @GetMapping("/prioritized")
-    public List<Map<String, Object>> getPrioritized() {
-        return taskService.getPrioritizedTasks();
+    public List<Map<String, Object>> getPrioritized(
+            @RequestHeader("X-Owner-Id") String ownerId) {
+        return taskService.getPrioritizedTasks(getOwnerId(ownerId));
     }
 
-    /** Get a single task by id. */
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getById(@PathVariable Long id) {
-        return taskService.getTaskById(id)
+    public ResponseEntity<Task> getById(
+            @PathVariable Long id,
+            @RequestHeader("X-Owner-Id") String ownerId) {
+        return taskService.getTaskById(id, getOwnerId(ownerId))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Update a task. */
     @PutMapping("/{id}")
-    public ResponseEntity<Task> update(@PathVariable Long id, @RequestBody Task task) {
+    public ResponseEntity<Task> update(
+            @PathVariable Long id,
+            @RequestHeader("X-Owner-Id") String ownerId,
+            @RequestBody Task task) {
         try {
-            return ResponseEntity.ok(taskService.updateTask(id, task));
-        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    taskService.updateTask(id, task, getOwnerId(ownerId)));
+        } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    /** Mark a task as completed. */
     @PatchMapping("/{id}/complete")
-    public ResponseEntity<Task> markComplete(@PathVariable Long id) {
+    public ResponseEntity<Task> markComplete(
+            @PathVariable Long id,
+            @RequestHeader("X-Owner-Id") String ownerId) {
         try {
-            return ResponseEntity.ok(taskService.markComplete(id));
-        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    taskService.markComplete(id, getOwnerId(ownerId)));
+        } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    /** Delete a task. */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        taskService.deleteTask(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @RequestHeader("X-Owner-Id") String ownerId) {
+        try {
+            taskService.deleteTask(id, getOwnerId(ownerId));
+            return ResponseEntity.noContent().build();
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
