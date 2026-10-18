@@ -1,7 +1,32 @@
+
 const API = '/api/tasks';
 let currentFilter = 'all';
 
-// ───────────── Helpers ─────────────
+// A persistent ID for this browser on this website.
+// This provides demo-level separation, not secure authentication.
+const OWNER_KEY = 'studentTaskPrioritizerOwnerId';
+
+function getOwnerId() {
+    let ownerId = localStorage.getItem(OWNER_KEY);
+
+    if (!ownerId) {
+        ownerId = crypto.randomUUID();
+        localStorage.setItem(OWNER_KEY, ownerId);
+    }
+
+    return ownerId;
+}
+
+const OWNER_ID = getOwnerId();
+
+async function apiFetch(url, options = {}) {
+    const headers = {
+        ...(options.headers || {}),
+        'X-Owner-Id': OWNER_ID
+    };
+
+    return fetch(url, { ...options, headers });
+}
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -9,8 +34,10 @@ const $$ = (sel) => document.querySelectorAll(sel);
 const TYPE_ICONS = {
     EXAM: '📝', ASSIGNMENT: '📄', PROJECT: '🛠️', PLACEMENT_TEST: '🎯'
 };
+
 const TYPE_LABELS = {
-    EXAM: 'Exam', ASSIGNMENT: 'Assignment', PROJECT: 'Project', PLACEMENT_TEST: 'Placement Test'
+    EXAM: 'Exam', ASSIGNMENT: 'Assignment',
+    PROJECT: 'Project', PLACEMENT_TEST: 'Placement Test'
 };
 
 function urgencyColor(label) {
@@ -23,54 +50,62 @@ function urgencyColor(label) {
 }
 
 function formatDate(dueDate) {
-    if (dueDate == null || dueDate === '') {
-        return '';
-    }
+    if (dueDate == null || dueDate === '') return '';
+
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
-    if (typeof dueDate === 'number' || (typeof dueDate === 'string' && /^\d+$/.test(dueDate))) {
+
+    if (typeof dueDate === 'number' ||
+        (typeof dueDate === 'string' && /^\d+$/.test(dueDate))) {
         return new Date(Number(dueDate)).toLocaleDateString('en-IN', options);
     }
+
     const iso = String(dueDate).slice(0, 10);
     return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', options);
 }
 
-// ───────────── API Calls ─────────────
+// API calls: every request carries the browser's owner ID.
 
 async function fetchPrioritized() {
-    const res = await fetch(`${API}/prioritized`);
+    const res = await apiFetch(`${API}/prioritized`);
+    if (!res.ok) throw new Error(`Could not load priorities (${res.status})`);
     return res.json();
 }
 
 async function fetchAll() {
-    const res = await fetch(API);
+    const res = await apiFetch(API);
+    if (!res.ok) throw new Error(`Could not load tasks (${res.status})`);
     return res.json();
 }
 
 async function createTask(task) {
-    await fetch(API, {
+    const res = await apiFetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
     });
+    if (!res.ok) throw new Error(`Could not create task (${res.status})`);
 }
 
 async function updateTask(id, task) {
-    await fetch(`${API}/${id}`, {
+    const res = await apiFetch(`${API}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task)
     });
+    if (!res.ok) throw new Error(`Could not update task (${res.status})`);
 }
 
 async function markComplete(id) {
-    await fetch(`${API}/${id}/complete`, { method: 'PATCH' });
+    const res = await apiFetch(`${API}/${id}/complete`, { method: 'PATCH' });
+    if (!res.ok) throw new Error(`Could not complete task (${res.status})`);
 }
 
 async function deleteTask(id) {
-    await fetch(`${API}/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Could not delete task (${res.status})`);
 }
 
-// ───────────── Rendering ─────────────
+// Rendering
 
 function renderTaskItem(entry, rank, isTop) {
     const { task, priorityScore, daysRemaining, urgencyLabel } = entry;
@@ -126,9 +161,10 @@ function renderCompletedItem(task) {
 }
 
 async function loadDashboard() {
-    const [prioritized, allTasks] = await Promise.all([fetchPrioritized(), fetchAll()]);
+    const [prioritized, allTasks] = await Promise.all([
+        fetchPrioritized(), fetchAll()
+    ]);
 
-    // Keep the API priority order. Filter by type only; do not re-sort.
     const taskListEl = $('#taskList');
     const ordered = Array.isArray(prioritized) ? prioritized.slice() : [];
     const filtered = currentFilter === 'all'
@@ -143,9 +179,9 @@ async function loadDashboard() {
             .join('');
     }
 
-    // Completed list
     const completedEl = $('#completedList');
     const completed = allTasks.filter(t => t.completed);
+
     if (completed.length === 0) {
         completedEl.innerHTML = '<p class="empty-state">No completed tasks yet.</p>';
     } else {
@@ -153,10 +189,11 @@ async function loadDashboard() {
     }
 }
 
-// ───────────── Event Handlers ─────────────
+// Event handlers
 
 $('#taskForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const task = {
         subject: $('#subject').value.trim(),
         title: $('#title').value.trim(),
@@ -164,47 +201,63 @@ $('#taskForm').addEventListener('submit', async (e) => {
         dueDate: $('#dueDate').value,
         description: $('#description').value.trim()
     };
-    await createTask(task);
-    e.target.reset();
-    loadDashboard();
+
+    try {
+        await createTask(task);
+        e.target.reset();
+        await loadDashboard();
+    } catch (error) {
+        alert(`Unable to save task: ${error.message}`);
+    }
 });
 
-// Filter buttons
 $$('.filter-group .btn-sm').forEach(btn => {
     btn.addEventListener('click', () => {
         $$('.filter-group .btn-sm').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilter = btn.dataset.filter;
-        loadDashboard();
+        loadDashboard().catch(error => alert(error.message));
     });
 });
 
 async function handleComplete(id) {
-    await markComplete(id);
-    loadDashboard();
+    try {
+        await markComplete(id);
+        await loadDashboard();
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 async function handleDelete(id) {
     if (confirm('Delete this task?')) {
-        await deleteTask(id);
-        loadDashboard();
+        try {
+            await deleteTask(id);
+            await loadDashboard();
+        } catch (error) {
+            alert(error.message);
+        }
     }
 }
 
-// ───────────── Edit Modal ─────────────
-
-let allTasksCache = [];
+// Edit modal
 
 async function openEditModal(id) {
-    const res = await fetch(`${API}/${id}`);
-    const task = await res.json();
-    $('#editId').value = task.id;
-    $('#editSubject').value = task.subject;
-    $('#editTitle').value = task.title;
-    $('#editTaskType').value = task.taskType;
-    $('#editDueDate').value = task.dueDate;
-    $('#editDescription').value = task.description || '';
-    $('#editModal').classList.remove('hidden');
+    try {
+        const res = await apiFetch(`${API}/${id}`);
+        if (!res.ok) throw new Error(`Could not load task (${res.status})`);
+
+        const task = await res.json();
+        $('#editId').value = task.id;
+        $('#editSubject').value = task.subject;
+        $('#editTitle').value = task.title;
+        $('#editTaskType').value = task.taskType;
+        $('#editDueDate').value = task.dueDate;
+        $('#editDescription').value = task.description || '';
+        $('#editModal').classList.remove('hidden');
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 function closeEditModal() {
@@ -213,6 +266,7 @@ function closeEditModal() {
 
 $('#editForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const id = $('#editId').value;
     const task = {
         subject: $('#editSubject').value.trim(),
@@ -221,15 +275,24 @@ $('#editForm').addEventListener('submit', async (e) => {
         dueDate: $('#editDueDate').value,
         description: $('#editDescription').value.trim()
     };
-    await updateTask(id, task);
-    closeEditModal();
-    loadDashboard();
+
+    try {
+        await updateTask(id, task);
+        closeEditModal();
+        await loadDashboard();
+    } catch (error) {
+        alert(`Unable to update task: ${error.message}`);
+    }
 });
 
-// Close modal on backdrop click
 $('#editModal').addEventListener('click', (e) => {
     if (e.target === $('#editModal')) closeEditModal();
 });
 
-// ───────────── Init ─────────────
-loadDashboard();
+// Init
+
+loadDashboard().catch(error => {
+    console.error(error);
+    $('#taskList').innerHTML =
+        '<p class="empty-state">Could not load tasks. Please refresh the page.</p>';
+});
