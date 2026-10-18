@@ -1,3 +1,4 @@
+
 package com.student.taskprioritizer.service;
 
 import com.student.taskprioritizer.model.Task;
@@ -27,6 +28,7 @@ class TaskServicePriorityTest {
     private TaskService service;
 
     private LocalDate today;
+    private static final String OWNER_ID = "test-owner-12345678";
 
     @BeforeEach
     void setUp() {
@@ -40,10 +42,10 @@ class TaskServicePriorityTest {
         Task projectIn2 = task(3L, "PROJECT", today.plusDays(2), false);
         Task assignmentIn1 = task(4L, "ASSIGNMENT", today.plusDays(1), false);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(placementIn13, examIn5, projectIn2, assignmentIn1));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         assertEquals(List.of(4L, 3L, 2L, 1L), ids(ranked));
         assertEquals(List.of(1L, 2L, 5L, 13L), days(ranked));
@@ -56,10 +58,10 @@ class TaskServicePriorityTest {
         Task moreOverdueProject = task(3L, "PROJECT", today.minusDays(4), false);
         Task dueToday = task(4L, "PLACEMENT_TEST", today, false);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(futureExam, overdueAssignment, moreOverdueProject, dueToday));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         assertEquals(List.of(3L, 2L, 4L, 1L), ids(ranked));
         assertEquals(-4L, days(ranked).get(0));
@@ -78,13 +80,14 @@ class TaskServicePriorityTest {
         Task exam = task(3L, "EXAM", sameDay, false);
         Task placement = task(4L, "PLACEMENT_TEST", sameDay, false);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(assignment, project, exam, placement));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         assertEquals(List.of(4L, 3L, 2L, 1L), ids(ranked));
-        assertTrue(ranked.stream().allMatch(e -> ((Number) e.get("daysRemaining")).longValue() == 3L));
+        assertTrue(ranked.stream().allMatch(e ->
+                ((Number) e.get("daysRemaining")).longValue() == 3L));
         assertTrue((double) ranked.get(0).get("priorityScore")
                 > (double) ranked.get(3).get("priorityScore"));
     }
@@ -95,13 +98,14 @@ class TaskServicePriorityTest {
         Task completedSooner = task(2L, "ASSIGNMENT", today.minusDays(2), true);
         Task completedSameDay = task(3L, "PROJECT", today.plusDays(1), true);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(active, completedSooner, completedSameDay));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         assertEquals(List.of(1L), ids(ranked));
-        assertTrue(ranked.stream().noneMatch(e -> ((Task) e.get("task")).isCompleted()));
+        assertTrue(ranked.stream().noneMatch(e ->
+                ((Task) e.get("task")).isCompleted()));
     }
 
     @Test
@@ -111,10 +115,10 @@ class TaskServicePriorityTest {
         Task in2 = task(3L, "ASSIGNMENT", today.plusDays(2), false);
         Task in1 = task(4L, "ASSIGNMENT", today.plusDays(1), false);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(in13, in5, in2, in1));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         double score1 = (double) ranked.get(0).get("priorityScore");
         double score2 = (double) ranked.get(1).get("priorityScore");
@@ -135,10 +139,10 @@ class TaskServicePriorityTest {
         Task assignmentTomorrow = task(1L, "ASSIGNMENT", today.plusDays(1), false);
         Task placementInFive = task(2L, "PLACEMENT_TEST", today.plusDays(5), false);
 
-        when(repository.findByCompletedFalseOrderByDueDateAsc())
+        when(repository.findByCompletedFalseAndOwnerIdOrderByDueDateAsc(OWNER_ID))
                 .thenReturn(List.of(placementInFive, assignmentTomorrow));
 
-        List<Map<String, Object>> ranked = service.getPrioritizedTasks();
+        List<Map<String, Object>> ranked = service.getPrioritizedTasks(OWNER_ID);
 
         assertEquals(1L, ((Task) ranked.get(0).get("task")).getId());
         assertTrue((double) ranked.get(0).get("priorityScore")
@@ -153,10 +157,14 @@ class TaskServicePriorityTest {
     }
 
     private static List<Long> ids(List<Map<String, Object>> ranked) {
-        return ranked.stream().map(e -> ((Task) e.get("task")).getId()).toList();
+        return ranked.stream()
+                .map(e -> ((Task) e.get("task")).getId())
+                .toList();
     }
 
     private static List<Long> days(List<Map<String, Object>> ranked) {
-        return ranked.stream().map(e -> ((Number) e.get("daysRemaining")).longValue()).toList();
+        return ranked.stream()
+                .map(e -> ((Number) e.get("daysRemaining")).longValue())
+                .toList();
     }
 }
