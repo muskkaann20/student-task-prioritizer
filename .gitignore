@@ -1,0 +1,14 @@
+target/
+student_tasks.db
+*.db
+*.sqlite
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+*.iml
+.env
+.env.*
+!.env.example
+*.log
+logs/

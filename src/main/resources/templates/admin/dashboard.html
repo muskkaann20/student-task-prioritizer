@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Student Task Prioritizer</title>
+    <link rel="stylesheet" th:href="@{/style.css}" href="/style.css">
+</head>
+<body>
+
+<div class="container">
+    <!-- Navigation Bar -->
+    <nav class="nav-bar">
+        <div>
+            <h1>📚 Admin Portal</h1>
+            <p class="subtitle">College-wide task assignment &amp; faculty workload</p>
+        </div>
+        <div class="nav-user">
+            <span th:text="${adminUser.name + ' (' + adminUser.email + ')'}">Admin</span>
+            <form th:action="@{/logout}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Feedback Alerts -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success</div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">Error</div>
+    <div th:if="${formError}" class="alert alert-error" th:text="${formError}">Validation Error</div>
+
+    <!-- Suggested Faculty Recommendations (shown when a task is selected/created) -->
+    <section class="card" th:if="${selectedTask != null}" style="border: 2px solid var(--primary); background: #fdfefe;">
+        <div class="section-header">
+            <h2>💡 Faculty Suggestions for Task #<span th:text="${selectedTask.id}">1</span>: <span th:text="${selectedTask.title}">Title</span></h2>
+        </div>
+        <p class="subtitle" style="margin-bottom: 1rem;">
+            Subject: <strong th:text="${selectedTask.subject}">CS</strong> |
+            Due: <strong th:text="${selectedTask.dueDate}">2026-11-01</strong> |
+            Estimated Hours: <strong th:text="${selectedTask.estimatedHours}">4</strong>h |
+            Required Skill: <strong th:text="${selectedTask.requiredSkillName != null ? selectedTask.requiredSkillName : 'None'}">Java</strong>
+        </p>
+
+        <div th:if="${#lists.isEmpty(suggestions)}" class="empty-state">
+            No faculty members meet the hard filters (matching skill, enough free capacity, within weekly maximum).
+        </div>
+
+        <div class="task-list" th:if="${not #lists.isEmpty(suggestions)}">
+            <div class="task-item" th:each="sug, stat : ${suggestions}">
+                <div class="task-rank" th:text="'#' + ${stat.count}">#1</div>
+                <div class="task-body">
+                    <div class="task-title">
+                        <span th:text="${sug.facultyName}">Dr. Asha Rao</span>
+                        <span class="type-badge" th:text="'Score: ' + ${sug.score}">Score: 28</span>
+                    </div>
+                    <div class="task-meta">
+                        <span th:text="${sug.facultyEmail}">email@college.edu</span>
+                        <span th:text="'Proficiency: ' + ${sug.proficiency} + '/5'">Proficiency: 5/5</span>
+                        <span th:text="'Free Hours: ' + ${sug.freeHours} + 'h'">Free: 16h</span>
+                        <span th:text="'Current Load: ' + ${sug.currentLoadHours} + 'h'">Load: 4h</span>
+                    </div>
+                    <ul class="reason-list">
+                        <li th:each="reason : ${sug.reasons}" th:text="${reason}">Reason text</li>
+                    </ul>
+                </div>
+                <div class="task-actions">
+                    <form th:action="@{/admin/tasks/{id}/assign(id=${selectedTask.id})}" method="post">
+                        <input type="hidden" name="facultyUserId" th:value="${sug.facultyUserId}">
+                        <button type="submit" class="btn btn-primary btn-sm">Confirm Assignment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Faculty Workload View -->
+    <section class="card">
+        <div class="section-header">
+            <h2>📊 Faculty Workload Summary</h2>
+        </div>
+        <div th:if="${#lists.isEmpty(workloadList)}" class="empty-state">
+            No faculty profiles found.
+        </div>
+        <table class="data-table" th:if="${not #lists.isEmpty(workloadList)}">
+            <thead>
+                <tr>
+                    <th>Faculty Member</th>
+                    <th>Current Week</th>
+                    <th>Assigned Hours</th>
+                    <th>Max Hours / Week</th>
+                    <th>Utilization</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="entry : ${workloadList}">
+                    <td><strong th:text="${entry.facultyName}">Dr. Asha</strong></td>
+                    <td th:text="${entry.weekLabel}">Week</td>
+                    <td><span th:text="${entry.assignedHours} + 'h'">4.0h</span></td>
+                    <td><span th:text="${entry.maxHoursPerWeek} + 'h'">20h</span></td>
+                    <td>
+                        <div style="background: var(--border); border-radius: 4px; height: 10px; width: 120px; overflow: hidden; display: inline-block; vertical-align: middle;">
+                            <div th:style="'background: ' + (${entry.assignedHours > entry.maxHoursPerWeek} ? 'var(--overdue)' : 'var(--primary)') + '; height: 100%; width: ' + ${entry.maxHoursPerWeek > 0 ? (entry.assignedHours * 100.0 / entry.maxHoursPerWeek) : 0} + '%;'"></div>
+                        </div>
+                        <span style="font-size: .8rem; margin-left: .5rem;" th:text="${entry.maxHoursPerWeek > 0 ? #numbers.formatDecimal((entry.assignedHours * 100.0 / entry.maxHoursPerWeek), 0, 0) : 0} + '%'">20%</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Create Task Form -->
+    <section class="card form-card">
+        <h2>➕ Create College Task</h2>
+        <form th:action="@{/admin/tasks}" th:object="${createTaskRequest}" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="taskSubject">Subject</label>
+                    <input type="text" id="taskSubject" th:field="*{subject}" placeholder="e.g. Computer Science" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskTitle">Task Title</label>
+                    <input type="text" id="taskTitle" th:field="*{title}" placeholder="e.g. Midterm Lab Evaluation" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="taskType">Task Type</label>
+                    <select id="taskType" th:field="*{taskType}" required>
+                        <option value="">Select type…</option>
+                        <option value="EXAM">📝 Exam</option>
+                        <option value="ASSIGNMENT">📄 Assignment</option>
+                        <option value="PROJECT">🛠️ Project</option>
+                        <option value="PLACEMENT_TEST">🎯 Placement Test</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="taskDueDate">Due Date</label>
+                    <input type="date" id="taskDueDate" th:field="*{dueDate}" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="taskHours">Estimated Hours</label>
+                    <input type="number" id="taskHours" th:field="*{estimatedHours}" min="0.5" step="0.5" placeholder="e.g. 4.0" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskSkill">Required Skill (optional)</label>
+                    <select id="taskSkill" th:field="*{requiredSkillId}">
+                        <option value="">None (Any faculty)</option>
+                        <option th:each="s : ${skills}" th:value="${s.id}" th:text="${s.name}">Java</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group full-width" style="margin-bottom: 1rem;">
+                <label for="taskDescription">Description</label>
+                <textarea id="taskDescription" th:field="*{description}" rows="2" placeholder="Details about this task…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Task &amp; View Suggestions</button>
+        </form>
+    </section>
+
+    <!-- Create Faculty Account Form -->
+    <section class="card form-card">
+        <h2>👤 Add Faculty Account</h2>
+        <form th:action="@{/admin/faculty}" th:object="${createFacultyRequest}" method="post">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="facName">Full Name</label>
+                    <input type="text" id="facName" th:field="*{name}" placeholder="Dr. Jane Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="facEmail">Email</label>
+                    <input type="email" id="facEmail" th:field="*{email}" placeholder="jdoe@college.edu" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="facPassword">Password</label>
+                    <input type="password" id="facPassword" th:field="*{password}" placeholder="Min 8 characters" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label for="facDept">Department</label>
+                    <select id="facDept" th:field="*{departmentId}" required>
+                        <option value="">Select department…</option>
+                        <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">Computer Science</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="facDesig">Designation</label>
+                    <input type="text" id="facDesig" th:field="*{designation}" placeholder="Associate Professor" required>
+                </div>
+                <div class="form-group">
+                    <label for="facMaxHours">Max Hours Per Week</label>
+                    <input type="number" id="facMaxHours" th:field="*{maxHoursPerWeek}" min="1" max="80" placeholder="20" required>
+                </div>
+            </div>
+
+            <!-- Skills with Proficiency -->
+            <h3 style="font-size: 1rem; margin: 1rem 0 .5rem;">Faculty Skills (Optional)</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Skill 1</label>
+                    <select name="skills[0].skillName">
+                        <option value="">None</option>
+                        <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Java</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Proficiency (1 to 5)</label>
+                    <input type="number" name="skills[0].proficiency" min="1" max="5" value="3">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Skill 2</label>
+                    <select name="skills[1].skillName">
+                        <option value="">None</option>
+                        <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Data Structures</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Proficiency (1 to 5)</label>
+                    <input type="number" name="skills[1].proficiency" min="1" max="5" value="3">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: .5rem;">Create Faculty</button>
+        </form>
+    </section>
+
+    <!-- Task List -->
+    <section class="card">
+        <div class="section-header">
+            <h2>📋 All Campus Tasks</h2>
+        </div>
+        <div th:if="${#lists.isEmpty(taskList)}" class="empty-state">
+            No tasks created yet.
+        </div>
+        <div class="task-list" th:if="${not #lists.isEmpty(taskList)}">
+            <div class="task-item" th:each="t : ${taskList}">
+                <div class="task-body">
+                    <div class="task-title">
+                        <span th:text="${t.subject + ' — ' + t.title}">CS — Lab Exam</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="type-badge" th:text="${t.taskType}">EXAM</span>
+                        <span th:text="'📅 ' + ${t.dueDate}">📅 2026-11-01</span>
+                        <span th:text="'⏳ ' + ${t.estimatedHours} + 'h'">⏳ 4h</span>
+                        <span th:if="${t.requiredSkillName}" th:text="'🎯 ' + ${t.requiredSkillName}">🎯 Java</span>
+                        <span class="badge" th:classappend="'badge-' + ${t.status}" th:text="${t.status}">PENDING</span>
+                        <span th:if="${t.assignedToName}" th:text="'Assigned to: ' + ${t.assignedToName}">Assigned to: Prof. Rao</span>
+                        <span th:if="${t.assignedToName == null}" style="color: var(--text-muted); font-style: italic;">Unassigned</span>
+                    </div>
+                    <div th:if="${t.status.name() == 'DECLINED' and t.declineReason != null}" class="task-desc" style="color: var(--overdue);">
+                        <strong>Decline Reason:</strong> <span th:text="${t.declineReason}">Too busy</span>
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <a th:href="@{/admin/dashboard(suggestTaskId=${t.id})}" class="btn btn-secondary btn-sm">Suggestions / Assign</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — Student Task Prioritizer</title>
+    <link rel="stylesheet" th:href="@{/style.css}" href="/style.css">
+    <style>
+        .login-shell {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .login-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-shell">
+    <div class="card login-card">
+        <div class="login-header">
+            <h1>📚 Student Task Prioritizer</h1>
+            <p class="subtitle">Sign in to your account</p>
+        </div>
+
+        <div th:if="${param.error}" class="alert alert-error">
+            Invalid email or password. Please try again.
+        </div>
+        <div th:if="${param.logout}" class="alert alert-success">
+            You have been logged out successfully.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="username">Email address</label>
+                <input type="email" id="username" name="username" placeholder="name@college.edu" required autofocus>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign in</button>
+        </form>
+
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .83rem; color: var(--text-muted);">
+            <strong>Role-based sign in:</strong> All roles sign in through this same page:
+            <ul style="margin: .35rem 0 0 1.2rem; line-height: 1.5;">
+                <li><strong>Admin:</strong> <code>admin@college.local</code> (or <code>ADMIN_EMAIL</code>)</li>
+                <li><strong>Student:</strong> <code>student@college.local</code> (password: <code>StudentPassword123!</code>)</li>
+                <li><strong>Faculty:</strong> email and password set by Admin</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
