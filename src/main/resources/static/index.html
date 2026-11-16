@@ -3,86 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Task Prioritizer</title>
+    <title>UniVerse — Student Portal</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- UniVerse Sticky Navigation Header -->
+<header class="universe-header">
+    <div class="universe-nav">
+        <a href="/" class="brand-block">
+            <span class="brand-icon">🌐</span>
+            <div class="brand-text">
+                <h1>UniVerse <span class="portal-badge student">🎓 Student Hub</span></h1>
+                <p class="tagline">The Connected Campus Platform &bull; <em>"One campus. Infinite possibilities."</em></p>
+            </div>
+        </a>
+        <div class="nav-user">
+            <div class="nav-user-info">
+                <div class="nav-user-name">Student Account</div>
+                <div class="nav-user-role">UniVerse Connected Campus</div>
+            </div>
+            <form action="/logout" method="post" id="logoutForm" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
+            </form>
+        </div>
+    </div>
+</header>
+
 <div class="container">
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
-        <form action="/logout" method="post" id="logoutForm">
-            <button type="submit" class="btn btn-sm btn-secondary">Log out</button>
-        </form>
+    <!-- Portal Sub-Navigation Tabs -->
+    <nav class="portal-tabs">
+        <button type="button" class="tab-btn active" data-tab="tab-tasks">🎯 UniVerse Tasks</button>
+        <button type="button" class="tab-btn" data-tab="tab-workshops">🛠️ Workshops</button>
+        <button type="button" class="tab-btn" data-tab="tab-classes">📖 Extra Classes</button>
+        <button type="button" class="tab-btn" data-tab="tab-support">💬 Academic Support</button>
+    </nav>
+
+    <!-- ───────────── TAB 1: UniVerse Tasks ───────────── -->
+    <div id="tab-tasks" class="tab-pane active">
+        <!-- Add Task Form -->
+        <section class="card form-card">
+            <h2>➕ Add New Deadline to UniVerse Tasks</h2>
+            <p class="subtitle" style="margin-bottom: 1.25rem;">Enter your assignments, exams, or projects. UniVerse will calculate your optimal study priority.</p>
+            <form id="taskForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="subject">Subject / Course</label>
+                        <input type="text" id="subject" placeholder="e.g. Data Structures & Algorithms" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Task Title</label>
+                        <input type="text" id="title" placeholder="e.g. Midterm Evaluation Lab 2" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskType">Task Type</label>
+                        <select id="taskType" required>
+                            <option value="">Select type…</option>
+                            <option value="EXAM">📝 Exam</option>
+                            <option value="ASSIGNMENT">📄 Assignment</option>
+                            <option value="PROJECT">🛠️ Project</option>
+                            <option value="PLACEMENT_TEST">🎯 Placement Test</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dueDate">Due Date</label>
+                        <input type="date" id="dueDate" required>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="description">Description / Syllabus Notes (optional)</label>
+                    <textarea id="description" rows="2" placeholder="Key chapters, submission link or evaluation details…"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Task to Prioritizer</button>
+            </form>
+        </section>
+
+        <!-- Priority Dashboard -->
+        <section class="card">
+            <div class="section-header">
+                <h2>🎯 Priority Dashboard</h2>
+                <div class="filter-group">
+                    <button class="btn btn-sm active" data-filter="all">All</button>
+                    <button class="btn btn-sm" data-filter="EXAM">Exams</button>
+                    <button class="btn btn-sm" data-filter="ASSIGNMENT">Assignments</button>
+                    <button class="btn btn-sm" data-filter="PROJECT">Projects</button>
+                    <button class="btn btn-sm" data-filter="PLACEMENT_TEST">Placement</button>
+                </div>
+            </div>
+            <div id="taskList" class="task-list">
+                <p class="empty-state">Loading tasks…</p>
+            </div>
+        </section>
+
+        <!-- Completed Tasks -->
+        <section class="card">
+            <h2>✅ Completed Tasks</h2>
+            <div id="completedList" class="task-list">
+                <p class="empty-state">No completed tasks yet.</p>
+            </div>
+        </section>
     </div>
 
-    <!-- Header -->
-    <header>
-        <h1>📚 Student Task Prioritizer</h1>
-        <p class="subtitle">Add your deadlines and let us tell you what to work on first</p>
-    </header>
+    <!-- ───────────── TAB 2: Workshops ───────────── -->
+    <div id="tab-workshops" class="tab-pane">
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <h2>🛠️ Campus Workshops &amp; Masterclasses</h2>
+                    <p class="subtitle">Skill-building hands-on workshops hosted by faculty &amp; industry partners</p>
+                </div>
+                <span class="type-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">Open for Registration</span>
+            </div>
 
-    <!-- Add Task Form -->
-    <section class="card form-card">
-        <h2>➕ Add New Task</h2>
-        <form id="taskForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="subject">Subject</label>
-                    <input type="text" id="subject" placeholder="e.g. Data Structures" required>
+            <div class="grid-cards" id="workshopsGrid">
+                <!-- Workshop Card 1 -->
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge" style="background:#eef2ff; color:#4f46e5;">Cloud &amp; DevOps</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">2 Days Left</span>
+                        </div>
+                        <div class="portal-card-title">Docker &amp; Kubernetes in Production</div>
+                        <div class="portal-card-body">
+                            Hands-on workshop containerizing Spring Boot microservices, building Helm charts, and deploying to cloud clusters.
+                            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text);">
+                                <strong>Instructor:</strong> Prof. Asha Rao &bull; <strong>Venue:</strong> CS Lab 302
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Nov 22, 2026 &bull; 3:00 PM</span>
+                        <button class="btn btn-primary btn-sm" onclick="handleWorkshopRegister('Docker & Kubernetes in Production')">Register</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="title">Task Title</label>
-                    <input type="text" id="title" placeholder="e.g. Unit Test 2" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="taskType">Task Type</label>
-                    <select id="taskType" required>
-                        <option value="">Select type…</option>
-                        <option value="EXAM">📝 Exam</option>
-                        <option value="ASSIGNMENT">📄 Assignment</option>
-                        <option value="PROJECT">🛠️ Project</option>
-                        <option value="PLACEMENT_TEST">🎯 Placement Test</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="dueDate">Due Date</label>
-                    <input type="date" id="dueDate" required>
-                </div>
-            </div>
-            <div class="form-group full-width">
-                <label for="description">Description (optional)</label>
-                <textarea id="description" rows="2" placeholder="Any notes about this task…"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Task</button>
-        </form>
-    </section>
 
-    <!-- Priority Dashboard -->
-    <section class="card">
-        <div class="section-header">
-            <h2>🎯 Priority Dashboard</h2>
-            <div class="filter-group">
-                <button class="btn btn-sm active" data-filter="all">All</button>
-                <button class="btn btn-sm" data-filter="EXAM">Exams</button>
-                <button class="btn btn-sm" data-filter="ASSIGNMENT">Assignments</button>
-                <button class="btn btn-sm" data-filter="PROJECT">Projects</button>
-                <button class="btn btn-sm" data-filter="PLACEMENT_TEST">Placement</button>
-            </div>
-        </div>
-        <div id="taskList" class="task-list">
-            <p class="empty-state">Loading tasks…</p>
-        </div>
-    </section>
+                <!-- Workshop Card 2 -->
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge" style="background:#fef3c7; color:#92400e;">Artificial Intelligence</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">Filling Fast</span>
+                        </div>
+                        <div class="portal-card-title">Applied LLMs and Vector Search</div>
+                        <div class="portal-card-body">
+                            Build retrieval-augmented generation (RAG) applications using Python, LangChain, and embeddings on real academic datasets.
+                            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text);">
+                                <strong>Instructor:</strong> Dr. Vikram Sen &bull; <strong>Venue:</strong> Virtual (Meet)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Nov 25, 2026 &bull; 5:00 PM</span>
+                        <button class="btn btn-primary btn-sm" onclick="handleWorkshopRegister('Applied LLMs and Vector Search')">Register</button>
+                    </div>
+                </div>
 
-    <!-- Completed Tasks -->
-    <section class="card">
-        <h2>✅ Completed Tasks</h2>
-        <div id="completedList" class="task-list">
-            <p class="empty-state">No completed tasks yet.</p>
-        </div>
-    </section>
+                <!-- Workshop Card 3 -->
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge" style="background:#dcfce7; color:#15803d;">Career Acceleration</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">Free Entry</span>
+                        </div>
+                        <div class="portal-card-title">Crack Technical &amp; System Design Interviews</div>
+                        <div class="portal-card-body">
+                            Interactive mock interview session covering scalable backend architecture, concurrency patterns, and algorithmic problem solving.
+                            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text);">
+                                <strong>Instructor:</strong> Faculty Placement Cell &bull; <strong>Venue:</strong> Seminar Hall A
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Nov 28, 2026 &bull; 2:00 PM</span>
+                        <button class="btn btn-primary btn-sm" onclick="handleWorkshopRegister('Crack Technical & System Design Interviews')">Register</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 3: Extra Classes ───────────── -->
+    <div id="tab-classes" class="tab-pane">
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <h2>📖 Extra Classes &amp; Remedial Sessions</h2>
+                    <p class="subtitle">Special topic deep-dives, exam prep, and concept reviews</p>
+                </div>
+            </div>
+
+            <div class="grid-cards">
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge">CS201 &bull; Data Structures</span>
+                            <span class="badge badge-URGENT">Midterm Prep</span>
+                        </div>
+                        <div class="portal-card-title">Graph Algorithms &amp; Dynamic Programming Review</div>
+                        <div class="portal-card-body">
+                            Focused problem-solving session for students preparing for the upcoming algorithm midterm.
+                            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text);">
+                                <strong>Faculty:</strong> Prof. Asha Rao &bull; <strong>Room:</strong> 204
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Tomorrow, 4:30 PM (90 mins)</span>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Added to your calendar schedule!')">Add to Schedule</button>
+                    </div>
+                </div>
+
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge">MATH302 &bull; Statistics</span>
+                            <span class="badge badge-MEDIUM">Doubt Clearing</span>
+                        </div>
+                        <div class="portal-card-title">Hypothesis Testing &amp; Probability Distributions</div>
+                        <div class="portal-card-body">
+                            Step-by-step problem clearing session for engineering and computer science students.
+                            <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text);">
+                                <strong>Faculty:</strong> Dr. Ramanathan &bull; <strong>Room:</strong> LH-2
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Thursday, 3:30 PM (60 mins)</span>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Added to your calendar schedule!')">Add to Schedule</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 4: Academic Support ───────────── -->
+    <div id="tab-support" class="tab-pane">
+        <section class="card form-card">
+            <h2>💬 Request Academic Support or Doubt Clearing</h2>
+            <p class="subtitle" style="margin-bottom: 1.25rem;">Need 1-on-1 assistance with a course topic, project guidance, or assignment doubts? Submit a request to faculty.</p>
+            <form id="supportForm" onsubmit="handleSupportSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supportCourse">Course / Subject</label>
+                        <input type="text" id="supportCourse" placeholder="e.g. Operating Systems" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supportType">Support Category</label>
+                        <select id="supportType" required>
+                            <option value="">Select category…</option>
+                            <option value="DOUBT">❓ Concept Clarification / Doubt</option>
+                            <option value="PROJECT">🛠️ Project Mentorship</option>
+                            <option value="REMEDIAL">📖 Remedial Academic Guidance</option>
+                            <option value="CAREER">🎯 Placement &amp; Internship Prep</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group full-width" style="margin-bottom:1rem;">
+                    <label for="supportTopic">Specific Topic &amp; Query</label>
+                    <textarea id="supportTopic" rows="3" placeholder="Describe the problem, theorem, or assignment you need help with…" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Support Request</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>📋 Your Active Support Requests</h2>
+            <div id="supportRequestsList" class="task-list">
+                <div class="task-item">
+                    <div class="task-body">
+                        <div class="task-title">Operating Systems — Deadlock Prevention &amp; Banker's Algorithm</div>
+                        <div class="task-meta">
+                            <span class="type-badge">❓ Concept Clarification</span>
+                            <span>📅 Submitted Today</span>
+                            <span class="badge badge-PENDING">Reviewing</span>
+                        </div>
+                        <div class="task-desc">Requested doubt session regarding resource allocation graph cycles.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 
 <!-- Edit Modal -->
@@ -121,8 +323,8 @@
                 <textarea id="editDescription" rows="2"></textarea>
             </div>
             <div class="modal-actions">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
                 <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
             </div>
         </form>
     </div>

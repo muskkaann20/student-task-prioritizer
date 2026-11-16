@@ -58,7 +58,20 @@ function formatDate(dueDate) {
     return new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', options);
 }
 
-// API calls: every request carries the browser's owner ID.
+// ── Tab Switching ──────────────────────────────────────────
+$$('.portal-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        $$('.portal-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        $$('.tab-pane').forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-tab');
+        const pane = document.getElementById(targetId);
+        if (pane) pane.classList.add('active');
+    });
+});
+
+// ── UniVerse Tasks API Calls ───────────────────────────────
 
 async function fetchPrioritized() {
     const res = await apiFetch(`${API}/prioritized`);
@@ -100,7 +113,7 @@ async function deleteTask(id) {
     if (!res.ok) throw new Error(`Could not delete task (${res.status})`);
 }
 
-// Rendering
+// ── Rendering Tasks ────────────────────────────────────────
 
 function renderTaskItem(entry, rank, isTop) {
     const { task, priorityScore, daysRemaining, urgencyLabel } = entry;
@@ -125,7 +138,7 @@ function renderTaskItem(entry, rank, isTop) {
                     <span>📅 ${formatDate(task.dueDate)}</span>
                     <span>⏳ ${daysText}</span>
                     <span class="badge ${badgeClass}">${urgencyLabel}</span>
-                    <span>⚡ ${priorityScore}</span>
+                    <span>⚡ Priority: ${priorityScore}</span>
                 </div>
                 ${task.description ? `<div class="task-desc">${task.description}</div>` : ''}
             </div>
@@ -146,6 +159,7 @@ function renderCompletedItem(task) {
                 <div class="task-meta">
                     <span class="type-badge">${TYPE_ICONS[task.taskType] || '📋'} ${TYPE_LABELS[task.taskType] || task.taskType}</span>
                     <span>📅 ${formatDate(task.dueDate)}</span>
+                    <span class="badge badge-DONE">Completed</span>
                 </div>
             </div>
             <div class="task-actions">
@@ -156,55 +170,66 @@ function renderCompletedItem(task) {
 }
 
 async function loadDashboard() {
-    const [prioritized, allTasks] = await Promise.all([
-        fetchPrioritized(), fetchAll()
-    ]);
-
     const taskListEl = $('#taskList');
-    const ordered = Array.isArray(prioritized) ? prioritized.slice() : [];
-    const filtered = currentFilter === 'all'
-        ? ordered
-        : ordered.filter(e => e.task.taskType === currentFilter);
-
-    if (filtered.length === 0) {
-        taskListEl.innerHTML = '<p class="empty-state">No pending tasks. Add one above! 🎉</p>';
-    } else {
-        taskListEl.innerHTML = filtered
-            .map((entry, i) => renderTaskItem(entry, i + 1, i === 0))
-            .join('');
-    }
-
     const completedEl = $('#completedList');
-    const completed = allTasks.filter(t => t.completed);
+    if (!taskListEl) return;
 
-    if (completed.length === 0) {
-        completedEl.innerHTML = '<p class="empty-state">No completed tasks yet.</p>';
-    } else {
-        completedEl.innerHTML = completed.map(renderCompletedItem).join('');
+    try {
+        const [prioritized, allTasks] = await Promise.all([
+            fetchPrioritized(), fetchAll()
+        ]);
+
+        const ordered = Array.isArray(prioritized) ? prioritized.slice() : [];
+        const filtered = currentFilter === 'all'
+            ? ordered
+            : ordered.filter(e => e.task.taskType === currentFilter);
+
+        if (filtered.length === 0) {
+            taskListEl.innerHTML = '<p class="empty-state">No pending tasks. Add your first deadline above! 🎉</p>';
+        } else {
+            taskListEl.innerHTML = filtered
+                .map((entry, i) => renderTaskItem(entry, i + 1, i === 0))
+                .join('');
+        }
+
+        if (completedEl) {
+            const completed = allTasks.filter(t => t.completed);
+            if (completed.length === 0) {
+                completedEl.innerHTML = '<p class="empty-state">No completed tasks yet.</p>';
+            } else {
+                completedEl.innerHTML = completed.map(renderCompletedItem).join('');
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        taskListEl.innerHTML = '<p class="empty-state">Could not load tasks. Please refresh the page.</p>';
     }
 }
 
-// Event handlers
+// ── Event Handlers ─────────────────────────────────────────
 
-$('#taskForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+const taskForm = $('#taskForm');
+if (taskForm) {
+    taskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-    const task = {
-        subject: $('#subject').value.trim(),
-        title: $('#title').value.trim(),
-        taskType: $('#taskType').value,
-        dueDate: $('#dueDate').value,
-        description: $('#description').value.trim()
-    };
+        const task = {
+            subject: $('#subject').value.trim(),
+            title: $('#title').value.trim(),
+            taskType: $('#taskType').value,
+            dueDate: $('#dueDate').value,
+            description: $('#description').value.trim()
+        };
 
-    try {
-        await createTask(task);
-        e.target.reset();
-        await loadDashboard();
-    } catch (error) {
-        alert(`Unable to save task: ${error.message}`);
-    }
-});
+        try {
+            await createTask(task);
+            e.target.reset();
+            await loadDashboard();
+        } catch (error) {
+            alert(`Unable to save task: ${error.message}`);
+        }
+    });
+}
 
 $$('.filter-group .btn-sm').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -235,7 +260,7 @@ async function handleDelete(id) {
     }
 }
 
-// Edit modal
+// ── Edit Modal ─────────────────────────────────────────────
 
 async function openEditModal(id) {
     try {
@@ -259,32 +284,72 @@ function closeEditModal() {
     $('#editModal').classList.add('hidden');
 }
 
-$('#editForm').addEventListener('submit', async (e) => {
+const editForm = $('#editForm');
+if (editForm) {
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = $('#editId').value;
+        const task = {
+            subject: $('#editSubject').value.trim(),
+            title: $('#editTitle').value.trim(),
+            taskType: $('#editTaskType').value,
+            dueDate: $('#editDueDate').value,
+            description: $('#editDescription').value.trim()
+        };
+
+        try {
+            await updateTask(id, task);
+            closeEditModal();
+            await loadDashboard();
+        } catch (error) {
+            alert(`Unable to update task: ${error.message}`);
+        }
+    });
+}
+
+const editModal = $('#editModal');
+if (editModal) {
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+    });
+}
+
+// ── Workshop Registration & Academic Support Handlers ──────
+
+window.handleWorkshopRegister = function(workshopName) {
+    alert(`🎉 Successfully registered for workshop:\n"${workshopName}"\n\nA confirmation has been linked to your student account.`);
+};
+
+window.handleSupportSubmit = function(e) {
     e.preventDefault();
+    const course = $('#supportCourse').value.trim();
+    const type = $('#supportType').value;
+    const topic = $('#supportTopic').value.trim();
 
-    const id = $('#editId').value;
-    const task = {
-        subject: $('#editSubject').value.trim(),
-        title: $('#editTitle').value.trim(),
-        taskType: $('#editTaskType').value,
-        dueDate: $('#editDueDate').value,
-        description: $('#editDescription').value.trim()
-    };
-
-    try {
-        await updateTask(id, task);
-        closeEditModal();
-        await loadDashboard();
-    } catch (error) {
-        alert(`Unable to update task: ${error.message}`);
+    const list = $('#supportRequestsList');
+    if (list) {
+        const newCard = document.createElement('div');
+        newCard.className = 'task-item';
+        newCard.innerHTML = `
+            <div class="task-body">
+                <div class="task-title">${course} — ${topic.substring(0, 50)}${topic.length > 50 ? '...' : ''}</div>
+                <div class="task-meta">
+                    <span class="type-badge">❓ ${type}</span>
+                    <span>📅 Submitted Just Now</span>
+                    <span class="badge badge-PENDING">Reviewing</span>
+                </div>
+                <div class="task-desc">${topic}</div>
+            </div>
+        `;
+        list.prepend(newCard);
     }
-});
 
-$('#editModal').addEventListener('click', (e) => {
-    if (e.target === $('#editModal')) closeEditModal();
-});
+    alert('Your academic support request has been submitted to faculty!');
+    e.target.reset();
+};
 
-// Logout form CSRF attachment
+// ── Logout form CSRF ───────────────────────────────────────
 const logoutForm = $('#logoutForm');
 if (logoutForm) {
     logoutForm.addEventListener('submit', () => {
@@ -299,10 +364,5 @@ if (logoutForm) {
     });
 }
 
-// Init
-
-loadDashboard().catch(error => {
-    console.error(error);
-    $('#taskList').innerHTML =
-        '<p class="empty-state">Could not load tasks. Please refresh the page.</p>';
-});
+// ── Initialize Dashboard ───────────────────────────────────
+loadDashboard();

@@ -3,137 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Dashboard — Student Task Prioritizer</title>
+    <title>UniVerse — Faculty Portal</title>
     <link rel="stylesheet" th:href="@{/style.css}" href="/style.css">
 </head>
 <body>
 
-<div class="container">
-    <!-- Navigation Bar -->
-    <nav class="nav-bar">
-        <div>
-            <h1>📚 Faculty Portal</h1>
-            <p class="subtitle">View profile &amp; manage assigned tasks</p>
-        </div>
+<!-- UniVerse Sticky Navigation Header -->
+<header class="universe-header">
+    <div class="universe-nav">
+        <a href="/faculty/dashboard" class="brand-block">
+            <span class="brand-icon">🌐</span>
+            <div class="brand-text">
+                <h1>UniVerse <span class="portal-badge faculty">👨‍🏫 Faculty Portal</span></h1>
+                <p class="tagline">The Connected Campus Platform &bull; <em>"One campus. Infinite possibilities."</em></p>
+            </div>
+        </a>
         <div class="nav-user">
-            <span th:text="${facultyUser.name + ' (' + facultyUser.email + ')'}">Dr. Asha</span>
+            <div class="nav-user-info">
+                <div class="nav-user-name" th:text="${facultyUser.name}">Dr. Asha Rao</div>
+                <div class="nav-user-role" th:text="${facultyUser.email}">asha@college.edu</div>
+            </div>
             <form th:action="@{/logout}" method="post" style="display:inline;">
                 <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
             </form>
         </div>
-    </nav>
+    </div>
+</header>
 
+<div class="container">
     <!-- Feedback Alerts -->
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success</div>
     <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">Error</div>
 
-    <!-- Faculty Profile View -->
-    <section class="card" th:if="${profile != null}">
-        <div class="section-header">
-            <h2>👤 My Profile</h2>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Name</label>
-                <div style="font-weight: 600;" th:text="${profile.name}">Dr. Asha Rao</div>
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <div th:text="${profile.email}">asha@college.edu</div>
-            </div>
-            <div class="form-group">
-                <label>Department</label>
-                <div th:text="${profile.department != null ? profile.department : 'General'}">Computer Science</div>
-            </div>
-            <div class="form-group">
-                <label>Designation</label>
-                <div th:text="${profile.designation}">Associate Professor</div>
-            </div>
-        </div>
-        <div class="form-row" style="margin-top: .5rem;">
-            <div class="form-group">
-                <label>Max Hours Per Week</label>
-                <div th:text="${profile.maxHoursPerWeek} + ' hours'">20 hours</div>
-            </div>
-            <div class="form-group">
-                <label>Current Assigned Load (This Week)</label>
+    <!-- Faculty Portal Tabs -->
+    <nav class="portal-tabs">
+        <button type="button" class="tab-btn active" onclick="switchFacultyTab('tab-profile', this)">👤 Profile &amp; Expertise</button>
+        <button type="button" class="tab-btn" onclick="switchFacultyTab('tab-tasks', this)">📋 Assigned Tasks</button>
+        <button type="button" class="tab-btn" onclick="switchFacultyTab('tab-sessions', this)">🎓 Campus Sessions Hub</button>
+    </nav>
+
+    <!-- ───────────── TAB 1: Faculty Profile View ───────────── -->
+    <div id="tab-profile" class="tab-pane active">
+        <section class="card" th:if="${profile != null}">
+            <div class="section-header">
                 <div>
-                    <strong th:text="${profile.currentLoadHours} + ' hours'">4 hours</strong>
-                    <span th:text="' / ' + ${profile.maxHoursPerWeek} + ' hours'"> / 20 hours</span>
+                    <h2>👤 Faculty Profile &amp; Teaching Capacity</h2>
+                    <p class="subtitle">Academic credentials, department affiliation, and weekly workload capacity</p>
+                </div>
+                <span class="badge" th:classappend="${profile.currentLoadHours >= profile.maxHoursPerWeek ? 'badge-URGENT' : 'badge-ACCEPTED'}" th:text="${profile.currentLoadHours >= profile.maxHoursPerWeek ? 'At Capacity' : 'Available for Assignments'}">Available</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <div style="font-weight: 700; font-size: 1.05rem;" th:text="${profile.name}">Dr. Asha Rao</div>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div th:text="${profile.email}">asha@college.edu</div>
+                </div>
+                <div class="form-group">
+                    <label>Academic Department</label>
+                    <div th:text="${profile.department != null ? profile.department : 'General'}">Computer Science</div>
+                </div>
+                <div class="form-group">
+                    <label>Designation</label>
+                    <div th:text="${profile.designation}">Associate Professor</div>
                 </div>
             </div>
-        </div>
 
-        <div style="margin-top: 1rem;">
-            <label>My Skills &amp; Proficiencies</label>
-            <div style="display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .35rem;">
-                <span th:if="${#lists.isEmpty(profile.skills)}" class="empty-state" style="padding: 0;">No skills listed.</span>
-                <span th:each="s : ${profile.skills}" class="type-badge" style="font-size: .85rem; padding: .25rem .75rem;">
-                    <strong th:text="${s.skillName}">Java</strong>:
-                    <span th:text="${s.proficiency} + '/5'">5/5</span>
-                </span>
-            </div>
-        </div>
-    </section>
-
-    <!-- Assigned Tasks View -->
-    <section class="card">
-        <div class="section-header">
-            <h2>📋 Tasks Assigned to Me</h2>
-        </div>
-
-        <div th:if="${#lists.isEmpty(tasks)}" class="empty-state">
-            No tasks currently assigned to you.
-        </div>
-
-        <div class="task-list" th:if="${not #lists.isEmpty(tasks)}">
-            <div class="task-item" th:each="t : ${tasks}">
-                <div class="task-body">
-                    <div class="task-title">
-                        <span th:text="${t.subject + ' — ' + t.title}">CS101 — Final Exam Grading</span>
-                        <span class="badge" th:classappend="'badge-' + ${t.status}" th:text="${t.status}">PENDING</span>
-                    </div>
-                    <div class="task-meta">
-                        <span class="type-badge" th:text="${t.taskType}">EXAM</span>
-                        <span th:text="'📅 Due: ' + ${t.dueDate}">📅 Due: 2026-11-01</span>
-                        <span th:text="'⏳ Estimated: ' + ${t.estimatedHours} + 'h'">⏳ Estimated: 4h</span>
-                        <span th:if="${t.requiredSkillName}" th:text="'🎯 Required Skill: ' + ${t.requiredSkillName}">🎯 Java</span>
-                        <span th:if="${t.assignedByName}" th:text="'Assigned by: ' + ${t.assignedByName}">Assigned by: Admin</span>
-                    </div>
-                    <div th:if="${t.description}" class="task-desc" th:text="${t.description}">Description notes</div>
-                    <div th:if="${t.status.name() == 'DECLINED' and t.declineReason != null}" class="task-desc" style="color: var(--overdue); margin-top: .5rem;">
-                        <strong>Decline reason:</strong> <span th:text="${t.declineReason}">Scheduling conflict</span>
+            <div class="form-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <div class="form-group">
+                    <label>Max Weekly Allocation</label>
+                    <div th:text="${profile.maxHoursPerWeek} + ' hours / week'">20 hours / week</div>
+                </div>
+                <div class="form-group">
+                    <label>Current Assigned Workload (This Week)</label>
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div class="utilization-track" style="width: 140px; height: 10px;">
+                            <div class="utilization-fill" th:style="'background: ' + (${profile.currentLoadHours > profile.maxHoursPerWeek} ? 'var(--overdue)' : 'var(--primary)') + '; width: ' + ${profile.maxHoursPerWeek > 0 ? (profile.currentLoadHours * 100.0 / profile.maxHoursPerWeek) : 0} + '%;'"></div>
+                        </div>
+                        <div>
+                            <strong th:text="${profile.currentLoadHours} + 'h'">4h</strong>
+                            <span style="color:var(--text-muted);" th:text="' / ' + ${profile.maxHoursPerWeek} + 'h'"> / 20h</span>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="task-actions" th:if="${t.status.name() == 'PENDING'}">
-                    <form th:action="@{/faculty/tasks/{id}/accept(id=${t.id})}" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-primary btn-sm">Accept</button>
-                    </form>
-                    <button type="button" class="btn btn-secondary btn-sm" th:onclick="'toggleDeclineForm(' + ${t.id} + ')'">Decline</button>
+            <div style="margin-top: 1.25rem;">
+                <label>Verified Skills &amp; Subject Proficiencies</label>
+                <div style="display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .4rem;">
+                    <span th:if="${#lists.isEmpty(profile.skills)}" class="empty-state" style="padding: 0;">No skills listed.</span>
+                    <span th:each="s : ${profile.skills}" class="type-badge" style="font-size: .85rem; padding: .3rem .85rem;">
+                        <strong th:text="${s.skillName}">Java</strong>:
+                        <span th:text="${s.proficiency} + '/5'">5/5</span>
+                    </span>
+                </div>
+            </div>
+        </section>
+    </div>
 
-                    <div th:id="'decline-panel-' + ${t.id}" style="display:none; margin-top: .75rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: .75rem;">
-                        <form th:action="@{/faculty/tasks/{id}/decline(id=${t.id})}" method="post">
-                            <label style="font-size: .8rem; font-weight: 600; color: #9f1239;">Reason for declining (required):</label>
-                            <textarea name="reason" rows="2" style="width:100%; margin: .35rem 0;" placeholder="Explain why you cannot take this task…" required></textarea>
-                            <div style="display: flex; gap: .5rem;">
-                                <button type="submit" class="btn btn-sm" style="background: var(--overdue); color: white;">Confirm Decline</button>
-                                <button type="button" class="btn btn-secondary btn-sm" th:onclick="'toggleDeclineForm(' + ${t.id} + ')'">Cancel</button>
-                            </div>
+    <!-- ───────────── TAB 2: Assigned Tasks View ───────────── -->
+    <div id="tab-tasks" class="tab-pane">
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <h2>📋 Tasks Assigned to You</h2>
+                    <p class="subtitle">Review, accept, or decline administrative assignments and evaluation duties</p>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(tasks)}" class="empty-state">
+                No tasks currently assigned to you. You are all caught up! 🎉
+            </div>
+
+            <div class="task-list" th:if="${not #lists.isEmpty(tasks)}">
+                <div class="task-item" th:each="t : ${tasks}">
+                    <div class="task-body">
+                        <div class="task-title">
+                            <span th:text="${t.subject + ' — ' + t.title}">CS101 — Final Exam Grading</span>
+                            <span class="badge" th:classappend="'badge-' + ${t.status}" th:text="${t.status}">PENDING</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="type-badge" th:text="${t.taskType}">EXAM</span>
+                            <span th:text="'📅 Due: ' + ${t.dueDate}">📅 Due: 2026-11-01</span>
+                            <span th:text="'⏳ Estimated: ' + ${t.estimatedHours} + 'h'">⏳ Estimated: 4h</span>
+                            <span th:if="${t.requiredSkillName}" th:text="'🎯 Required Skill: ' + ${t.requiredSkillName}">🎯 Java</span>
+                            <span th:if="${t.assignedByName}" th:text="'Assigned by: ' + ${t.assignedByName}">Assigned by: Admin</span>
+                        </div>
+                        <div th:if="${t.description}" class="task-desc" th:text="${t.description}">Description notes</div>
+                        <div th:if="${t.status.name() == 'DECLINED' and t.declineReason != null}" class="task-desc" style="color: var(--overdue); margin-top: .5rem;">
+                            <strong>Decline reason:</strong> <span th:text="${t.declineReason}">Scheduling conflict</span>
+                        </div>
+                    </div>
+
+                    <div class="task-actions" th:if="${t.status.name() == 'PENDING'}">
+                        <form th:action="@{/faculty/tasks/{id}/accept(id=${t.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-primary btn-sm">Accept Assignment</button>
                         </form>
+                        <button type="button" class="btn btn-secondary btn-sm" th:onclick="'toggleDeclineForm(' + ${t.id} + ')'">Decline</button>
+
+                        <div th:id="'decline-panel-' + ${t.id}" style="display:none; margin-top: .75rem; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: .75rem;">
+                            <form th:action="@{/faculty/tasks/{id}/decline(id=${t.id})}" method="post">
+                                <label style="font-size: .8rem; font-weight: 600; color: #9f1239;">Reason for declining (required):</label>
+                                <textarea name="reason" rows="2" style="width:100%; margin: .35rem 0;" placeholder="Explain why you cannot take this task…" required></textarea>
+                                <div style="display: flex; gap: .5rem;">
+                                    <button type="submit" class="btn btn-sm" style="background: var(--overdue); color: white;">Confirm Decline</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" th:onclick="'toggleDeclineForm(' + ${t.id} + ')'">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 3: Campus Sessions Hub ───────────── -->
+    <div id="tab-sessions" class="tab-pane">
+        <!-- Host New Session Form -->
+        <section class="card form-card">
+            <h2>➕ Schedule Workshop, Extra Class or Doubt Session</h2>
+            <p class="subtitle" style="margin-bottom: 1.25rem;">Announce new campus workshops, remedial classes, or office-hour doubt sessions directly to students</p>
+            <form onsubmit="handleSessionCreate(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sessionTitle">Session Title</label>
+                        <input type="text" id="sessionTitle" placeholder="e.g. Hands-on Docker &amp; Kubernetes Deployment" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sessionType">Session Category</label>
+                        <select id="sessionType" required>
+                            <option value="">Select category…</option>
+                            <option value="WORKSHOP">🛠️ Interactive Workshop</option>
+                            <option value="EXTRA_CLASS">📖 Extra Class / Exam Review</option>
+                            <option value="DOUBT">❓ 1-on-1 / Group Doubt Solving</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sessionDate">Date &amp; Time</label>
+                        <input type="datetime-local" id="sessionDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sessionVenue">Venue / Virtual Room</label>
+                        <input type="text" id="sessionVenue" placeholder="e.g. Lab 302 or Google Meet link" required>
+                    </div>
+                </div>
+                <div class="form-group full-width" style="margin-bottom: 1rem;">
+                    <label for="sessionDesc">Agenda &amp; Prerequisites</label>
+                    <textarea id="sessionDesc" rows="2" placeholder="Topics covered, software needed, or target student semester…"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Schedule Campus Session</button>
+            </form>
+        </section>
+
+        <!-- Active Sessions List -->
+        <section class="card">
+            <h2>📅 Your Scheduled Campus Sessions</h2>
+            <div id="facultySessionsList" class="grid-cards">
+                <div class="portal-card">
+                    <div>
+                        <div class="portal-card-header">
+                            <span class="type-badge" style="background:#eef2ff; color:#4f46e5;">🛠️ Workshop</span>
+                            <span class="badge badge-ACCEPTED">Active</span>
+                        </div>
+                        <div class="portal-card-title">Docker &amp; Kubernetes in Production</div>
+                        <div class="portal-card-body">
+                            Hands-on workshop containerizing Spring Boot microservices, building Helm charts, and deploying to cloud clusters.
+                            <div style="margin-top:0.4rem;"><strong>Venue:</strong> CS Lab 302 &bull; <strong>Enrolled:</strong> 34 students</div>
+                        </div>
+                    </div>
+                    <div class="portal-card-footer">
+                        <span>📅 Nov 22, 2026 &bull; 3:00 PM</span>
+                        <button class="btn btn-secondary btn-sm" onclick="alert('Session details updated')">Manage</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 
 <script>
+    function switchFacultyTab(targetId, el) {
+        document.querySelectorAll('.portal-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add('active');
+    }
+
     function toggleDeclineForm(id) {
         const panel = document.getElementById('decline-panel-' + id);
         if (panel) {
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         }
+    }
+
+    function handleSessionCreate(e) {
+        e.preventDefault();
+        const title = document.getElementById('sessionTitle').value;
+        const type = document.getElementById('sessionType').value;
+        const venue = document.getElementById('sessionVenue').value;
+        const date = document.getElementById('sessionDate').value;
+        const desc = document.getElementById('sessionDesc').value;
+
+        const list = document.getElementById('facultySessionsList');
+        if (list) {
+            const card = document.createElement('div');
+            card.className = 'portal-card';
+            card.innerHTML = `
+                <div>
+                    <div class="portal-card-header">
+                        <span class="type-badge" style="background:#eef2ff; color:#4f46e5;">${type}</span>
+                        <span class="badge badge-ACCEPTED">Scheduled</span>
+                    </div>
+                    <div class="portal-card-title">${title}</div>
+                    <div class="portal-card-body">
+                        ${desc || 'Campus session scheduled for students.'}
+                        <div style="margin-top:0.4rem;"><strong>Venue:</strong> ${venue} &bull; <strong>Enrolled:</strong> 0 students</div>
+                    </div>
+                </div>
+                <div class="portal-card-footer">
+                    <span>📅 ${date.replace('T', ' ')}</span>
+                    <button class="btn btn-secondary btn-sm">Manage</button>
+                </div>
+            `;
+            list.prepend(card);
+        }
+        alert('Campus session scheduled successfully! Students can now discover and register for it in the Student Hub.');
+        e.target.reset();
     }
 </script>
 

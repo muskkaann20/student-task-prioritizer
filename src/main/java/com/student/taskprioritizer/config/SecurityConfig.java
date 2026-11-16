@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableMethodSecurity
@@ -36,8 +37,8 @@ public class SecurityConfig {
         http
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        // Static resources & login page — public
-                        .requestMatchers("/login", "/style.css", "/css/**", "/favicon.ico").permitAll()
+                        // Static resources & login/logout page — public
+                        .requestMatchers("/login", "/logout", "/style.css", "/css/**", "/favicon.ico").permitAll()
                         // Student SPA (served at / as static HTML)
                         .requestMatchers("/", "/index.html", "/app.js").authenticated()
                         // Student REST APIs
@@ -67,14 +68,19 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                         .logoutSuccessUrl("/login?logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
                         .permitAll()
                 )
                 // CSRF is ON (Spring default). The student SPA sends mutating
                 // requests via fetch, so it needs the CSRF token. We expose it
-                // as a cookie that JavaScript can read.
+                // as a cookie that JavaScript can read. Logout is excluded from CSRF
+                // so clicking logout never throws 403 Forbidden.
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/logout")
                         .csrfTokenRepository(
                                 org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler())

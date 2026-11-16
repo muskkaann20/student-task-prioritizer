@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — Student Task Prioritizer</title>
+    <title>Sign In — UniVerse</title>
     <link rel="stylesheet" th:href="@{/style.css}" href="/style.css">
     <style>
         .login-shell {
@@ -12,18 +12,56 @@
             align-items: center;
             justify-content: center;
             padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f1f5f9 100%);
         }
         .login-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
+            border: 1px solid rgba(79, 70, 229, 0.12);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            border-radius: 16px;
+            padding: 2rem;
+            background: #ffffff;
         }
         .login-header {
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+        .login-brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
         }
         .login-header h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .login-header .tagline {
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+        .login-header .motto {
+            color: #64748b;
+            font-size: 0.82rem;
+            margin-top: 0.15rem;
+            font-style: italic;
         }
     </style>
 </head>
@@ -32,8 +70,10 @@
 <div class="login-shell">
     <div class="card login-card">
         <div class="login-header">
-            <h1>📚 Student Task Prioritizer</h1>
-            <p class="subtitle">Sign in to your account</p>
+            <div class="login-brand-badge">✨ Connected Campus</div>
+            <h1>🌐 UniVerse</h1>
+            <p class="tagline">The Connected Campus Platform</p>
+            <p class="motto">"One campus. Infinite possibilities."</p>
         </div>
 
         <div th:if="${param.error}" class="alert alert-error">
@@ -54,15 +94,16 @@
                 <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign in</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">Sign In to UniVerse</button>
         </form>
 
-        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: .83rem; color: var(--text-muted);">
-            <strong>Role-based sign in:</strong> All roles sign in through this same page:
-            <ul style="margin: .35rem 0 0 1.2rem; line-height: 1.5;">
-                <li><strong>Admin:</strong> <code>admin@college.local</code> (or <code>ADMIN_EMAIL</code>)</li>
-                <li><strong>Student:</strong> <code>student@college.local</code> (password: <code>StudentPassword123!</code>)</li>
-                <li><strong>Faculty:</strong> email and password set by Admin</li>
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); font-size: .83rem; color: var(--text-muted);">
+            <strong style="color: var(--text);">Unified Campus Sign-In:</strong>
+            <p style="margin-top: 0.25rem; font-size: 0.8rem;">Select or enter credentials for your portal role:</p>
+            <ul style="margin: .4rem 0 0 1.2rem; line-height: 1.6;">
+                <li><strong>Admin Portal:</strong> <code>admin@college.local</code></li>
+                <li><strong>Student Portal (UniVerse Tasks):</strong> <code>student@college.local</code> (pwd: <code>StudentPassword123!</code>)</li>
+                <li><strong>Faculty Portal:</strong> registered faculty email &amp; password</li>
             </ul>
         </div>
     </div>

@@ -3,26 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard — Student Task Prioritizer</title>
+    <title>UniVerse — Admin Portal</title>
     <link rel="stylesheet" th:href="@{/style.css}" href="/style.css">
 </head>
 <body>
 
-<div class="container">
-    <!-- Navigation Bar -->
-    <nav class="nav-bar">
-        <div>
-            <h1>📚 Admin Portal</h1>
-            <p class="subtitle">College-wide task assignment &amp; faculty workload</p>
-        </div>
+<!-- UniVerse Sticky Navigation Header -->
+<header class="universe-header">
+    <div class="universe-nav">
+        <a href="/admin/dashboard" class="brand-block">
+            <span class="brand-icon">🌐</span>
+            <div class="brand-text">
+                <h1>UniVerse <span class="portal-badge admin">🛡️ Admin Portal</span></h1>
+                <p class="tagline">The Connected Campus Platform &bull; <em>"One campus. Infinite possibilities."</em></p>
+            </div>
+        </a>
         <div class="nav-user">
-            <span th:text="${adminUser.name + ' (' + adminUser.email + ')'}">Admin</span>
+            <div class="nav-user-info">
+                <div class="nav-user-name" th:text="${adminUser.name}">Admin</div>
+                <div class="nav-user-role" th:text="${adminUser.email}">admin@college.local</div>
+            </div>
             <form th:action="@{/logout}" method="post" style="display:inline;">
                 <button type="submit" class="btn btn-secondary btn-sm">Log out</button>
             </form>
         </div>
-    </nav>
+    </div>
+</header>
 
+<div class="container">
     <!-- Feedback Alerts -->
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}">Success</div>
     <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}">Error</div>
@@ -72,197 +80,281 @@
         </div>
     </section>
 
-    <!-- Faculty Workload View -->
-    <section class="card">
-        <div class="section-header">
-            <h2>📊 Faculty Workload Summary</h2>
-        </div>
-        <div th:if="${#lists.isEmpty(workloadList)}" class="empty-state">
-            No faculty profiles found.
-        </div>
-        <table class="data-table" th:if="${not #lists.isEmpty(workloadList)}">
-            <thead>
-                <tr>
-                    <th>Faculty Member</th>
-                    <th>Current Week</th>
-                    <th>Assigned Hours</th>
-                    <th>Max Hours / Week</th>
-                    <th>Utilization</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="entry : ${workloadList}">
-                    <td><strong th:text="${entry.facultyName}">Dr. Asha</strong></td>
-                    <td th:text="${entry.weekLabel}">Week</td>
-                    <td><span th:text="${entry.assignedHours} + 'h'">4.0h</span></td>
-                    <td><span th:text="${entry.maxHoursPerWeek} + 'h'">20h</span></td>
-                    <td>
-                        <div style="background: var(--border); border-radius: 4px; height: 10px; width: 120px; overflow: hidden; display: inline-block; vertical-align: middle;">
-                            <div th:style="'background: ' + (${entry.assignedHours > entry.maxHoursPerWeek} ? 'var(--overdue)' : 'var(--primary)') + '; height: 100%; width: ' + ${entry.maxHoursPerWeek > 0 ? (entry.assignedHours * 100.0 / entry.maxHoursPerWeek) : 0} + '%;'"></div>
+    <!-- Admin Portal Tabs -->
+    <nav class="portal-tabs">
+        <button type="button" class="tab-btn active" onclick="switchAdminTab('tab-workload', this)">📊 Workload &amp; Availability</button>
+        <button type="button" class="tab-btn" onclick="switchAdminTab('tab-directory', this)">👥 Faculty Directory</button>
+        <button type="button" class="tab-btn" onclick="switchAdminTab('tab-tasks', this)">📋 College Tasks</button>
+        <button type="button" class="tab-btn" onclick="switchAdminTab('tab-add-faculty', this)">➕ Add Faculty</button>
+    </nav>
+
+    <!-- ───────────── TAB 1: Faculty Workload View ───────────── -->
+    <div id="tab-workload" class="tab-pane active">
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <h2>📊 Faculty Workload &amp; Availability Dashboard</h2>
+                    <p class="subtitle">Live weekly capacity, assigned task hours, and utilization rates across departments</p>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(workloadList)}" class="empty-state">
+                No faculty profiles found. Use the "Add Faculty" tab to onboard members.
+            </div>
+            <table class="data-table" th:if="${not #lists.isEmpty(workloadList)}">
+                <thead>
+                    <tr>
+                        <th>Faculty Member</th>
+                        <th>Current Week</th>
+                        <th>Assigned Hours</th>
+                        <th>Max Hours / Week</th>
+                        <th>Capacity Utilization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${workloadList}">
+                        <td><strong th:text="${entry.facultyName}">Dr. Asha</strong></td>
+                        <td th:text="${entry.weekLabel}">Week</td>
+                        <td><span th:text="${entry.assignedHours} + 'h'">4.0h</span></td>
+                        <td><span th:text="${entry.maxHoursPerWeek} + 'h'">20h</span></td>
+                        <td>
+                            <div class="utilization-track">
+                                <div class="utilization-fill" th:style="'background: ' + (${entry.assignedHours > entry.maxHoursPerWeek} ? 'var(--overdue)' : 'var(--primary)') + '; width: ' + ${entry.maxHoursPerWeek > 0 ? (entry.assignedHours * 100.0 / entry.maxHoursPerWeek) : 0} + '%;'"></div>
+                            </div>
+                            <span style="font-size: .8rem; margin-left: .5rem; font-weight:600;" th:text="${entry.maxHoursPerWeek > 0 ? #numbers.formatDecimal((entry.assignedHours * 100.0 / entry.maxHoursPerWeek), 0, 0) : 0} + '%'">20%</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 2: Faculty Directory ───────────── -->
+    <div id="tab-directory" class="tab-pane">
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <h2>👥 Faculty Directory &amp; Expertise Profiles</h2>
+                    <p class="subtitle">Registered college professors, academic departments, designations and verified skills</p>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(facultyList)}" class="empty-state">
+                No faculty members registered in directory.
+            </div>
+            <div class="grid-cards" th:if="${not #lists.isEmpty(facultyList)}">
+                <div class="portal-card" th:each="f : ${facultyList}">
+                    <div>
+                        <div class="portal-card-header">
+                            <div>
+                                <div class="portal-card-title" th:text="${f.name}">Dr. Jane Doe</div>
+                                <span style="font-size:0.8rem; color:var(--text-muted);" th:text="${f.email}">jane@college.edu</span>
+                            </div>
+                            <span class="type-badge" style="background:#f1f5f9; color:var(--primary); font-weight:600;" th:text="${f.department != null ? f.department : 'General'}">Computer Science</span>
                         </div>
-                        <span style="font-size: .8rem; margin-left: .5rem;" th:text="${entry.maxHoursPerWeek > 0 ? #numbers.formatDecimal((entry.assignedHours * 100.0 / entry.maxHoursPerWeek), 0, 0) : 0} + '%'">20%</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </section>
-
-    <!-- Create Task Form -->
-    <section class="card form-card">
-        <h2>➕ Create College Task</h2>
-        <form th:action="@{/admin/tasks}" th:object="${createTaskRequest}" method="post">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="taskSubject">Subject</label>
-                    <input type="text" id="taskSubject" th:field="*{subject}" placeholder="e.g. Computer Science" required>
-                </div>
-                <div class="form-group">
-                    <label for="taskTitle">Task Title</label>
-                    <input type="text" id="taskTitle" th:field="*{title}" placeholder="e.g. Midterm Lab Evaluation" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="taskType">Task Type</label>
-                    <select id="taskType" th:field="*{taskType}" required>
-                        <option value="">Select type…</option>
-                        <option value="EXAM">📝 Exam</option>
-                        <option value="ASSIGNMENT">📄 Assignment</option>
-                        <option value="PROJECT">🛠️ Project</option>
-                        <option value="PLACEMENT_TEST">🎯 Placement Test</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="taskDueDate">Due Date</label>
-                    <input type="date" id="taskDueDate" th:field="*{dueDate}" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="taskHours">Estimated Hours</label>
-                    <input type="number" id="taskHours" th:field="*{estimatedHours}" min="0.5" step="0.5" placeholder="e.g. 4.0" required>
-                </div>
-                <div class="form-group">
-                    <label for="taskSkill">Required Skill (optional)</label>
-                    <select id="taskSkill" th:field="*{requiredSkillId}">
-                        <option value="">None (Any faculty)</option>
-                        <option th:each="s : ${skills}" th:value="${s.id}" th:text="${s.name}">Java</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group full-width" style="margin-bottom: 1rem;">
-                <label for="taskDescription">Description</label>
-                <textarea id="taskDescription" th:field="*{description}" rows="2" placeholder="Details about this task…"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Create Task &amp; View Suggestions</button>
-        </form>
-    </section>
-
-    <!-- Create Faculty Account Form -->
-    <section class="card form-card">
-        <h2>👤 Add Faculty Account</h2>
-        <form th:action="@{/admin/faculty}" th:object="${createFacultyRequest}" method="post">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="facName">Full Name</label>
-                    <input type="text" id="facName" th:field="*{name}" placeholder="Dr. Jane Doe" required>
-                </div>
-                <div class="form-group">
-                    <label for="facEmail">Email</label>
-                    <input type="email" id="facEmail" th:field="*{email}" placeholder="jdoe@college.edu" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="facPassword">Password</label>
-                    <input type="password" id="facPassword" th:field="*{password}" placeholder="Min 8 characters" minlength="8" required>
-                </div>
-                <div class="form-group">
-                    <label for="facDept">Department</label>
-                    <select id="facDept" th:field="*{departmentId}" required>
-                        <option value="">Select department…</option>
-                        <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">Computer Science</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="facDesig">Designation</label>
-                    <input type="text" id="facDesig" th:field="*{designation}" placeholder="Associate Professor" required>
-                </div>
-                <div class="form-group">
-                    <label for="facMaxHours">Max Hours Per Week</label>
-                    <input type="number" id="facMaxHours" th:field="*{maxHoursPerWeek}" min="1" max="80" placeholder="20" required>
-                </div>
-            </div>
-
-            <!-- Skills with Proficiency -->
-            <h3 style="font-size: 1rem; margin: 1rem 0 .5rem;">Faculty Skills (Optional)</h3>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Skill 1</label>
-                    <select name="skills[0].skillName">
-                        <option value="">None</option>
-                        <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Java</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Proficiency (1 to 5)</label>
-                    <input type="number" name="skills[0].proficiency" min="1" max="5" value="3">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Skill 2</label>
-                    <select name="skills[1].skillName">
-                        <option value="">None</option>
-                        <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Data Structures</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Proficiency (1 to 5)</label>
-                    <input type="number" name="skills[1].proficiency" min="1" max="5" value="3">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="margin-top: .5rem;">Create Faculty</button>
-        </form>
-    </section>
-
-    <!-- Task List -->
-    <section class="card">
-        <div class="section-header">
-            <h2>📋 All Campus Tasks</h2>
-        </div>
-        <div th:if="${#lists.isEmpty(taskList)}" class="empty-state">
-            No tasks created yet.
-        </div>
-        <div class="task-list" th:if="${not #lists.isEmpty(taskList)}">
-            <div class="task-item" th:each="t : ${taskList}">
-                <div class="task-body">
-                    <div class="task-title">
-                        <span th:text="${t.subject + ' — ' + t.title}">CS — Lab Exam</span>
+                        <div class="portal-card-body">
+                            <div><strong>Designation:</strong> <span th:text="${f.designation}">Professor</span></div>
+                            <div style="margin-top:0.25rem;"><strong>Weekly Capacity:</strong> <span th:text="${f.maxHoursPerWeek} + ' hrs/wk'">20 hrs/wk</span></div>
+                            <div style="margin-top:0.6rem;">
+                                <label style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em;">Verified Skills</label>
+                                <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.25rem;">
+                                    <span th:if="${#lists.isEmpty(f.skills)}" style="font-size:0.8rem; color:var(--text-muted); font-style:italic;">No skills logged</span>
+                                    <span th:each="s : ${f.skills}" class="type-badge" style="font-size:0.75rem;">
+                                        <span th:text="${s.skillName}">Java</span>: <strong th:text="${s.proficiency} + '/5'">4/5</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="task-meta">
-                        <span class="type-badge" th:text="${t.taskType}">EXAM</span>
-                        <span th:text="'📅 ' + ${t.dueDate}">📅 2026-11-01</span>
-                        <span th:text="'⏳ ' + ${t.estimatedHours} + 'h'">⏳ 4h</span>
-                        <span th:if="${t.requiredSkillName}" th:text="'🎯 ' + ${t.requiredSkillName}">🎯 Java</span>
-                        <span class="badge" th:classappend="'badge-' + ${t.status}" th:text="${t.status}">PENDING</span>
-                        <span th:if="${t.assignedToName}" th:text="'Assigned to: ' + ${t.assignedToName}">Assigned to: Prof. Rao</span>
-                        <span th:if="${t.assignedToName == null}" style="color: var(--text-muted); font-style: italic;">Unassigned</span>
-                    </div>
-                    <div th:if="${t.status.name() == 'DECLINED' and t.declineReason != null}" class="task-desc" style="color: var(--overdue);">
-                        <strong>Decline Reason:</strong> <span th:text="${t.declineReason}">Too busy</span>
+                    <div class="portal-card-footer">
+                        <span>Current Load: <strong th:text="${f.currentLoadHours} + 'h'">4h</strong></span>
+                        <span class="badge" th:classappend="${f.currentLoadHours >= f.maxHoursPerWeek ? 'badge-URGENT' : 'badge-ACCEPTED'}" th:text="${f.currentLoadHours >= f.maxHoursPerWeek ? 'Full Capacity' : 'Available'}">Available</span>
                     </div>
                 </div>
-                <div class="task-actions">
-                    <a th:href="@{/admin/dashboard(suggestTaskId=${t.id})}" class="btn btn-secondary btn-sm">Suggestions / Assign</a>
+            </div>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 3: College Tasks & Management ───────────── -->
+    <div id="tab-tasks" class="tab-pane">
+        <!-- Create Task Form -->
+        <section class="card form-card">
+            <h2>➕ Create College Task</h2>
+            <p class="subtitle" style="margin-bottom: 1.25rem;">Dispatch college evaluation, exam grading, or project review tasks to faculty members</p>
+            <form th:action="@{/admin/tasks}" th:object="${createTaskRequest}" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskSubject">Subject</label>
+                        <input type="text" id="taskSubject" th:field="*{subject}" placeholder="e.g. Computer Science" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskTitle">Task Title</label>
+                        <input type="text" id="taskTitle" th:field="*{title}" placeholder="e.g. Midterm Lab Evaluation" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskType">Task Type</label>
+                        <select id="taskType" th:field="*{taskType}" required>
+                            <option value="">Select type…</option>
+                            <option value="EXAM">📝 Exam</option>
+                            <option value="ASSIGNMENT">📄 Assignment</option>
+                            <option value="PROJECT">🛠️ Project</option>
+                            <option value="PLACEMENT_TEST">🎯 Placement Test</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">Due Date</label>
+                        <input type="date" id="taskDueDate" th:field="*{dueDate}" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskHours">Estimated Hours</label>
+                        <input type="number" id="taskHours" th:field="*{estimatedHours}" min="0.5" step="0.5" placeholder="e.g. 4.0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskSkill">Required Skill (optional)</label>
+                        <select id="taskSkill" th:field="*{requiredSkillId}">
+                            <option value="">None (Any faculty)</option>
+                            <option th:each="s : ${skills}" th:value="${s.id}" th:text="${s.name}">Java</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group full-width" style="margin-bottom: 1rem;">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" th:field="*{description}" rows="2" placeholder="Details about this task…"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Task &amp; View Smart Suggestions</button>
+            </form>
+        </section>
+
+        <!-- Task List -->
+        <section class="card">
+            <div class="section-header">
+                <h2>📋 All Campus Tasks</h2>
+            </div>
+            <div th:if="${#lists.isEmpty(taskList)}" class="empty-state">
+                No college tasks created yet.
+            </div>
+            <div class="task-list" th:if="${not #lists.isEmpty(taskList)}">
+                <div class="task-item" th:each="t : ${taskList}">
+                    <div class="task-body">
+                        <div class="task-title">
+                            <span th:text="${t.subject + ' — ' + t.title}">CS — Lab Exam</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="type-badge" th:text="${t.taskType}">EXAM</span>
+                            <span th:text="'📅 ' + ${t.dueDate}">📅 2026-11-01</span>
+                            <span th:text="'⏳ ' + ${t.estimatedHours} + 'h'">⏳ 4h</span>
+                            <span th:if="${t.requiredSkillName}" th:text="'🎯 ' + ${t.requiredSkillName}">🎯 Java</span>
+                            <span class="badge" th:classappend="'badge-' + ${t.status}" th:text="${t.status}">PENDING</span>
+                            <span th:if="${t.assignedToName}" th:text="'Assigned to: ' + ${t.assignedToName}">Assigned to: Prof. Rao</span>
+                            <span th:if="${t.assignedToName == null}" style="color: var(--text-muted); font-style: italic;">Unassigned</span>
+                        </div>
+                        <div th:if="${t.status.name() == 'DECLINED' and t.declineReason != null}" class="task-desc" style="color: var(--overdue);">
+                            <strong>Decline Reason:</strong> <span th:text="${t.declineReason}">Too busy</span>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <a th:href="@{/admin/dashboard(suggestTaskId=${t.id})}" class="btn btn-secondary btn-sm">Suggestions / Assign</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
+
+    <!-- ───────────── TAB 4: Add Faculty Account Form ───────────── -->
+    <div id="tab-add-faculty" class="tab-pane">
+        <section class="card form-card">
+            <h2>👤 Provision New Faculty Account</h2>
+            <p class="subtitle" style="margin-bottom: 1.25rem;">Create faculty credentials, assign department affiliation, set maximum weekly load, and log initial skills</p>
+            <form th:action="@{/admin/faculty}" th:object="${createFacultyRequest}" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="facName">Full Name</label>
+                        <input type="text" id="facName" th:field="*{name}" placeholder="Dr. Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="facEmail">Email Address</label>
+                        <input type="email" id="facEmail" th:field="*{email}" placeholder="jdoe@college.edu" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="facPassword">Initial Password</label>
+                        <input type="password" id="facPassword" th:field="*{password}" placeholder="Min 8 characters" minlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="facDept">Department</label>
+                        <select id="facDept" th:field="*{departmentId}" required>
+                            <option value="">Select department…</option>
+                            <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">Computer Science</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="facDesig">Designation / Title</label>
+                        <input type="text" id="facDesig" th:field="*{designation}" placeholder="Associate Professor" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="facMaxHours">Max Hours Per Week</label>
+                        <input type="number" id="facMaxHours" th:field="*{maxHoursPerWeek}" min="1" max="80" placeholder="20" required>
+                    </div>
+                </div>
+
+                <!-- Skills with Proficiency -->
+                <h3 style="font-size: 1rem; margin: 1.25rem 0 .5rem;">Faculty Skills (Optional)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Skill 1</label>
+                        <select name="skills[0].skillName">
+                            <option value="">None</option>
+                            <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Java</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Proficiency (1 to 5)</label>
+                        <input type="number" name="skills[0].proficiency" min="1" max="5" value="3">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Skill 2</label>
+                        <select name="skills[1].skillName">
+                            <option value="">None</option>
+                            <option th:each="s : ${skills}" th:value="${s.name}" th:text="${s.name}">Data Structures</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Proficiency (1 to 5)</label>
+                        <input type="number" name="skills[1].proficiency" min="1" max="5" value="3">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: .75rem;">Create Faculty Account</button>
+            </form>
+        </section>
+    </div>
 </div>
+
+<script>
+    function switchAdminTab(targetId, el) {
+        document.querySelectorAll('.portal-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add('active');
+    }
+
+    // Auto-switch to task tab if suggestions are being displayed
+    window.addEventListener('DOMContentLoaded', () => {
+        const hasSelectedTask = [[${selectedTask != null}]];
+        if (hasSelectedTask) {
+            const tasksTabBtn = document.querySelectorAll('.portal-tabs .tab-btn')[2];
+            if (tasksTabBtn) switchAdminTab('tab-tasks', tasksTabBtn);
+        }
+    });
+</script>
 
 </body>
 </html>
