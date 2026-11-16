@@ -1,4 +1,4 @@
-# UniVerse — The Connected Campus Platform
+# UniVerse - The Connected Campus Platform
 
 **One campus. Infinite possibilities.**
 
